@@ -1,5 +1,3 @@
-#error doesnt work with new BeardRenderer.cpp/h version
-
 #include <windows.h>
 #include <math.h>
 #include "BeardMatrix.h"
@@ -64,18 +62,18 @@ int main() {
 	print("x");
 	printi(client.bottom);
 	nl();
-	dc1.width = dc2.width = dc3.width = dc4.width = client.right >> 1;
-	dc1.height = dc2.height = dc3.height = dc4.height = client.bottom >> 1;
-	dc1.pitch = dc1.zPitch = dc2.pitch = dc2.zPitch = dc3.pitch =
-		dc3.zPitch = dc4.pitch = dc4.zPitch = client.right << 2;
-	dc1.buffer = (Color*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	dc2.buffer = dc1.buffer + dc1.width;
-	dc3.buffer = dc1.buffer + dc1.width * dc1.height * 2;
-	dc4.buffer = dc3.buffer + dc3.width;
-	dc1.zBuffer = (unsigned int*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	dc2.zBuffer = dc1.zBuffer + dc1.width;
-	dc3.zBuffer = dc1.zBuffer + dc1.width * dc1.height * 2;
-	dc4.zBuffer = dc3.zBuffer + dc3.width;
+	void *tmp1 = VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	void *tmp2 = VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	BRCInit(&dc1, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
+	BRCInit(&dc2, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
+	BRCInit(&dc3, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
+	BRCInit(&dc4, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
+	dc2.buffer = (int*)dc1.buffer + dc1.width;
+	dc3.buffer = (int*)dc1.buffer + dc1.width * dc1.height * 2;
+	dc4.buffer = (int*)dc3.buffer + dc3.width;
+	dc2.zBuffer = (int*)dc1.zBuffer + dc1.width;
+	dc3.zBuffer = (int*)dc1.zBuffer + dc1.width * dc1.height * 2;
+	dc4.zBuffer = (int*)dc3.zBuffer + dc3.width;
 	buffer = CreateBitmap(client.right, client.bottom, 1, 32, 0);
 	
 	//windows II
@@ -119,7 +117,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		background(&dc2, 0);
 		clearZbuf(&dc2);
 		
-		camera(a, 1, 0, 0, 0, 0, 0, 0, 1, 0);
+		camera(a, 0, 0, 1, 0, 0, 0, 0, 1, 0);
 		rotateY(b, radius);
 		mulmat(a, b, c, 4, 4, 4);
 		applyMatrixToVec3(buf, _triangles, 3*3, c);
@@ -132,7 +130,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		background(&dc3, 0);
 		clearZbuf(&dc3);
 		
-		camera(a, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+		camera(a, 0, 0, 1, 0, 0, 0, 1, 0, 0);
 		rotateY(b, radius);
 		mulmat(a, b, c, 4, 4, 4);
 		applyMatrixToVec3(buf, _triangles, 3*3, c);
@@ -145,8 +143,8 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		background(&dc4, 0);
 		clearZbuf(&dc4);
 		
-		//camera(a, 1, 1, 1, 0, 0, 0, 0, 1, 0);
-		identity(a);
+		camera(a, 1, 1, 1, 0, 0, 0, sin(radius * 2.0) * 0.3, 1, -sin(radius * 2.0) * 0.3);
+		//identity(a);
 		rotateY(b, radius);
 		mulmat(a, b, c, 4, 4, 4);
 		applyMatrixToVec3(buf, _triangles, 3*3, c);
@@ -176,7 +174,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			for(int i = 0; i < client.bottom; i++) {
 				unsigned int a;
 				for(int j = 0; j < client.right; j++) {
-					a = dc1.zBuffer[i * client.right + j];
+					a = ((unsigned char*)dc1.zBuffer)[i * client.right + j];
 					a = 255 - (a >> 24);
 					a |= (a << 8) | (a << 16);
 					buf[i * client.right + j] = a;

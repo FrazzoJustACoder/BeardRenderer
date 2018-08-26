@@ -19,10 +19,8 @@ lib: $(OBJECTS)
 
 .PHONY: clean
 clean:
+	echo TODO learn to use makefiles and make this error disappear
 	rm $(OBJECTS) $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\WinDebug.o
-
-$(BINDIR)\LongBeard.o: $(OBJECTS)
-	$(CC) -r -o $@ $^
 
 $(BINDIR)\BeardRenderer.o: $(SRCDIR)\BeardRenderer.cpp $(INCDIR)\BeardRenderer.h
 	$(CC) $(CFLAGS) -c -o $@ $< -std=c++11 -Wno-pointer-arith
@@ -35,6 +33,7 @@ $(BINDIR)\lib.o: $(SRCDIR)\lib.S $(INCDIR)\lib.h
 
 .PHONY: clean_lib
 clean_lib:
+	echo TODO learn to use makefiles and make this error disappear
 	rm $(OBJECTS)
 
 #test area
@@ -46,6 +45,10 @@ test_win_normal: $(OBJECTS) $(BINDIR)\TestWinNormal.o $(BINDIR)\WinDebug.o
 test_win_splitscreen:  $(OBJECTS) $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\WinDebug.o
 	$(CC) -o $(BINDIR)\$(TEST_EXECUTABLE) $^ -lgdi32
 
+.PHONY: test_win_console
+test_win_console: $(OBJECTS) $(BINDIR)\TestWinConsole.o
+	$(CC) -o $(BINDIR)\$(TEST_EXECUTABLE) $^
+
 $(BINDIR)\WinDebug.o: $(TSTDIR)\WinDebug.cpp $(TSTDIR)\WinDebug.h
 	$(CC) -c -o $@ $<
 
@@ -55,7 +58,15 @@ $(BINDIR)\TestWinNormal.o: $(TSTDIR)\TestWinNormal.cpp $(LIBDEPS) $(TSTDIR)\WinD
 $(BINDIR)\TestWinSplitscreen.o: $(TSTDIR)\TestWinSplitscreen.cpp $(LIBDEPS) $(TSTDIR)\WinDebug.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(BINDIR)\TestWinConsole.o: $(TSTDIR)\TestWinConsole.cpp $(LIBDEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 .PHONY: clean_test
 clean_test:
-	rm $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\WinDebug.o
-#NOTE debug may or may not be compiled
+	echo TODO learn to use makefiles and make this error disappear
+	rm $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\WinDebug.o $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o
+
+#.PHONY: debug_normal
+#debug_normal:
+#	$(CC) $(CFLAGS) -c -g -o $(BINDIR)\BeardRenderer.o $(SRCDIR)\BeardRenderer.cpp -std=c++11 -Wno-pointer-arith
+#	$(CC) $(CFLAGS) -g -o $(BINDIR)\$(TEST_EXECUTABLE) $(SRCDIR)\BeardMatrix.cpp $(SRCDIR)\lib.S $(TSTDIR)\TestWinNormal.cpp $(TSTDIR)\WinDebug.cpp $(BINDIR)\BeardRenderer.o -lgdi32

@@ -80,7 +80,7 @@ int main() {
 	radius = 0.0;
 	x = 0.0f;
 	y = 0.0f;
-	z = 1.0f;
+	z = 1.5f;
 	pitch = 0.0f;
 	yaw = 0.0f;
 	keys = 0;
@@ -159,7 +159,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		s[2] += z;
 		camera(b, x, y, z, s[0], s[1], s[2], u[0], u[1], u[2]);
 		mulmat(b, a, c, 4, 4, 4);
-		perspective(b, M_PI / 3.0, 4.0f / 3.0f, 0.5f, 5.0f);
+		perspective(b, M_PI / 3.0, 4.0f / 3.0f, 0.1f, 3.0f);
 		mulmat(b, c, a, 4, 4, 4);
 		applyMatrixToVec3(buf, _triangles, 3*3, a);
 		//applyMatrixToVec3(buf, _cube, 2*3*6, a);

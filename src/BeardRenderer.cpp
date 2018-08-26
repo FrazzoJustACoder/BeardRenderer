@@ -211,16 +211,22 @@ void triangle(BRC *brc, const float *p1, const float *p2, const float *p3, Color
 	}
 }
 
+void (*background_shortcut[4])(void*, unsigned int, unsigned int) = {
+	memset, memset2, memset3, memset4
+};
 void background(BRC *brc, Color c) {
 	int Bpp = brc->bpp >> 3;
+	void (*set)(void*, unsigned int, unsigned int);
+	set = background_shortcut[Bpp - 1];
 	for(int i = 0, n = brc->height * brc->pitch;
 		i < n; i += brc->pitch)
 		memset4(brc->buffer + i, c, brc->width);
+		//(*set)(brc->buffer + i, c, brc->width);
 }
 
 void clearZbuf(BRC *brc) {
 	int Bpz = brc->zDepth >> 3;
 	for(int i = 0, n = brc->height * brc->zPitch;
 		i < n; i += brc->zPitch)
-		memset4(brc->zBuffer + i, (0xFFFFFFFF >> (32 - 6 * Bpz)) << (Bpz << 1), brc->width);
+		memset4(brc->zBuffer + i, 0xFFFFFFFF, brc->width);// * (Bpz) / 4);
 }
