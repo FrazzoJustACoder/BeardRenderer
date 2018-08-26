@@ -6,7 +6,7 @@ SRCDIR=src
 INCDIR=include
 TSTDIR=test
 OBJECTS=$(BINDIR)\BeardRenderer.o $(BINDIR)\BeardMatrix.o $(BINDIR)\lib.o
-LIB_OUT=$(BINDIR)\libBeard.a
+LIBOUT=$(BINDIR)\libBeard.a
 LIBDEPS=$(INCDIR)\BeardMatrix.h $(INCDIR)\BeardRenderer.h
 TEST_EXECUTABLE=test.exe
 CFLAGS=-I$(INCDIR)
@@ -17,12 +17,10 @@ LDFLAGS_TST=-L$(BINDIR) -lBeard
 all: lib
 
 .PHONY: lib
-lib: $(LIB_OUT)
+lib: $(LIBOUT)
 
 .PHONY: clean
-clean: 
-	echo TODO learn to use makefiles and make this error disappear 
-	rm $(OBJECTS) $(LIBOUT) $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o $(BINDIR)\WinDebug.o 
+clean: clean_lib clean_test
 
 
 $(LIBOUT): $(OBJECTS)
@@ -40,8 +38,7 @@ $(BINDIR)\lib.o: $(SRCDIR)\lib.S $(INCDIR)\lib.h
 
 .PHONY: clean_lib
 clean_lib:
-	echo TODO learn to use makefiles and make this error disappear
-	rm $(OBJECTS) $(LIBOUT)
+	rm -f $(OBJECTS) $(LIBOUT)
 
 #test area
 .PHONY: test_win_normal
@@ -70,5 +67,4 @@ $(BINDIR)\TestWinConsole.o: $(TSTDIR)\TestWinConsole.cpp $(LIBDEPS)
 
 .PHONY: clean_test
 clean_test:
-	echo TODO learn to use makefiles and make this error disappear
-	rm $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\WinDebug.o $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o
+	rm -f $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\WinDebug.o $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o
