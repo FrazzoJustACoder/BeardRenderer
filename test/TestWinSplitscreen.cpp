@@ -1,3 +1,5 @@
+#error doesnt work with new BeardRenderer.cpp/h version
+
 #include <windows.h>
 #include <math.h>
 #include "BeardMatrix.h"

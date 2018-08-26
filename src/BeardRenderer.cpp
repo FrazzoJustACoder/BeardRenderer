@@ -1,14 +1,60 @@
+#include <cstdint>
 #include "BeardRenderer.h"
 #include "lib.h"
 
 #define min(a,b) (a<b?a:b)
 #define abs(a) (a<0?-a:a)
 
-#define MAX_DEPTH 0xFFFFFF00
+//#define MAX_DEPTH 0xFFFFFF00
+
+//TODO this abstraction made it slower !
+inline void setPixel(void *buf, void *zBuf, uint32_t color, uint32_t depth, int bpp, int bpz) {
+	uint32_t t, mask;
+	
+	mask = 0xFFFFFFFF >> (32 - bpp);
+	t = *(uint32_t*)buf & ~mask;
+	t |= color & mask;
+	*(uint32_t*)buf = t;
+	
+	mask = 0xFFFFFFFF >> (32 - bpz);
+	t = *(uint32_t*)zBuf & ~mask;
+	t |= depth & mask;
+	*(uint32_t*)zBuf = t;
+}
+
+//returns true if depth < *inZ i.e. the pixel can be written
+inline bool cmpDepth(void *zBuf, uint32_t depth, int bpz) {
+	uint32_t t, mask = 0xFFFFFFFF >> (32 - bpz);
+	depth &= mask;
+	t = (*(uint32_t*)zBuf) & mask;
+	return depth < t;
+}
+
+bool BRCInit(BRC *brc, void *buffer, void *zBuffer, int width, int height, int pitch, int zPitch, int bpp, int zDepth) {
+	//since this library is abstract, it doesn't allocate memory
+	bpp &= ~7; //TODO add support for bpp < 8
+	zDepth &= ~7;
+	if(bpp < 8 || bpp > 32 || zDepth < 8 || zDepth > 32 || !buffer || !zBuffer)
+		return false;
+	brc->buffer = buffer;
+	brc->zBuffer = zBuffer;
+	brc->width = width;
+	brc->height = height;
+	brc->pitch = pitch;
+	brc->zPitch = zPitch;
+	brc->zDepth = zDepth;
+	brc->bpp = bpp;
+	return true;
+}
 
 void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	if(y <= -1.0f || y > 1.0f)
 		return;
+	int Bpp, Bpz; //bytes per pixel, bytes per zBuffer element
+	Bpp = brc->bpp >> 3;
+	Bpz = brc->zDepth >> 3;
+	//maxDepth is 0xFC, 0xFFF0, 0xFFFFC0 or 0xFFFFFF00 based on bpz, to avoid little errors due to the use of float
+	uint32_t maxDepth = (0xFFFFFFFF >> (32 - 6 * Bpz)) << (Bpz << 1);
 	float t;
 	if(x1 > x2) {
 		t = x1;
@@ -21,17 +67,19 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	else if(x1 == x2) {
 		float z = min(z1, z2);
 		if(x1 >= -1.0f && x1 < 1.0f && z >= -1.0f && z <= 1.0f) {
-			int h = (int)((y - 1.0f) / -2.0f * brc->height) * (brc->pitch >> 2);
-			int x = (int)((x1 + 1.0f) / 2.0f * brc->width);
-			int z = (int)((z - 1.0f) / -2.0f * MAX_DEPTH);
-			if(z < brc->zBuffer[h + x]) {
-				brc->zBuffer[h + x] = z;
-				brc->buffer[h + x] = c;
-			}
+			int h = (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
+			int hz = (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;
+			int x = (int)((x1 + 1.0f) / 2.0f * brc->width) * Bpp;
+			int xz = (int)((x1 + 1.0f) / 2.0f * brc->width) * Bpz;
+			uint32_t z = (int)((z - 1.0f) / -2.0f * maxDepth);
+			if(cmpDepth(brc->zBuffer + hz + xz, z, brc->zDepth))
+				setPixel(brc->buffer + h + x, brc->zBuffer + hz + xz, c, z, Bpp, Bpz);
+				/*brc->zBuffer[h + x] = z;
+				brc->buffer[h + x] = c;*/
 		}
 		return;
 	}
-	if(x1 < -3.0f || x2 > 3.0f) //NOTE problems with perspective matrix
+	if(x1 < -3.0f || x2 > 3.0f) //NOTE problems with clipping
 		return;
 	if(x1 >= 1.0f || x2 < -1.0f)
 		return;
@@ -64,19 +112,20 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	}
 	if(x1 < -1.0f || x2 > 1.0f) //nothing to draw
 		return;
-	float z = (z1 - 1.0f) / -2.0f * MAX_DEPTH;
+	float z = (z1 - 1.0f) / -2.0f * maxDepth;
 	int x = (x1 + 1.0f) / 2.0f * brc->width;
 	int n = (x2 - x1) / 2.0f * brc->width;
-	dz = (z2 - z1) / -2.0f * MAX_DEPTH / n;
-	Color *b = brc->buffer;
-	unsigned int *zb = brc->zBuffer;
-	int h = (int)((y - 1.0f) / -2.0f * brc->height) * (brc->pitch >> 2);
-	int zh = (int)((y - 1.0f) / -2.0f * brc->height) * (brc->zPitch >> 2);
+	dz = (z2 - z1) / -2.0f * maxDepth / n;
+	void *b = brc->buffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
+	void *zb = brc->zBuffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;
+	/*int h = (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
+	int hz = (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;*/
 	while(n > 0) {
-		if((unsigned int)z < zb[h + x]) {
+		if(cmpDepth(zb + x * Bpz, z, brc->zDepth)) {
 			//here goes shading code
-			b[h + x] = c;
-			zb[zh + x] = z;
+			setPixel(b + x * Bpp, zb + x * Bpz, c, z, brc->bpp, brc->zDepth);
+			/*b[h + x] = c;
+			zb[hz + x] = z;*/
 		}
 		x++;
 		z += dz;
@@ -163,15 +212,15 @@ void triangle(BRC *brc, const float *p1, const float *p2, const float *p3, Color
 }
 
 void background(BRC *brc, Color c) {
-	for(int i = 0, n = brc->height * (brc->pitch >> 2);
-		i < n; i += (brc->pitch >> 2))
+	int Bpp = brc->bpp >> 3;
+	for(int i = 0, n = brc->height * brc->pitch;
+		i < n; i += brc->pitch)
 		memset4(brc->buffer + i, c, brc->width);
-	//memset4(brc->buffer, c, brc->width * brc->height);
 }
 
 void clearZbuf(BRC *brc) {
-	for(int i = 0, n = brc->height * (brc->zPitch >> 2);
-		i < n; i+= (brc->zPitch >> 2))
-		memset4(brc->zBuffer + i, MAX_DEPTH, brc->width);
-	//memset4(brc->zBuffer, MAX_DEPTH, brc->width * brc->height);
+	int Bpz = brc->zDepth >> 3;
+	for(int i = 0, n = brc->height * brc->zPitch;
+		i < n; i += brc->zPitch)
+		memset4(brc->zBuffer + i, (0xFFFFFFFF >> (32 - 6 * Bpz)) << (Bpz << 1), brc->width);
 }

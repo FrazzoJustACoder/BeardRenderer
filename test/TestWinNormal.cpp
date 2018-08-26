@@ -91,11 +91,21 @@ int main() {
 	print("x");
 	printi(client.bottom);
 	nl();
-	brc.width = client.right;
+	if(!
+		BRCInit(&brc,
+			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
+			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
+			client.right, client.bottom, client.right << 2, client.right << 2, 32, 32
+			)
+	) {
+		MessageBox(0, "!", "error", MB_OK);
+		return 1;
+	}
+	/*brc.width = client.right;
 	brc.height = client.bottom;
 	brc.pitch = brc.zPitch = client.right << 2;
 	brc.buffer = (Color*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	brc.zBuffer = (unsigned int*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	brc.zBuffer = (unsigned int*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);*/
 	buffer = CreateBitmap(client.right, client.bottom, 1, 32, 0);
 	
 	//windows II
@@ -179,7 +189,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			for(int i = 0; i < client.bottom; i++) {
 				unsigned int a;
 				for(int j = 0; j < client.right; j++) {
-					a = brc.zBuffer[i * client.right + j];
+					a = ((unsigned int*)(brc.zBuffer))[i * client.right + j];
 					a = 255 - (a >> 24);
 					a |= (a << 8) | (a << 16);
 					buf[i * client.right + j] = a;
