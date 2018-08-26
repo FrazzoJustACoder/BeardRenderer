@@ -8,6 +8,9 @@
 #define DISABLE_NEWLINE_AUTO_RETURN 0x0008 //should be defined int wincon.h but my compiler complains
 #endif //DISABLE_NEWLINE_AUTO_RETURN
 
+//TODO find a way to determine the character w/h ratio, this shall be valid just on my machine
+#define CHAR_RATIO 0.5
+
 const float _triangles[] = {
 -1.0f, 1.0f, -1.0f,
 1.0f, 0.0f, 1.0f,
@@ -80,7 +83,7 @@ int main() {
 		rotateY(a, radius);
 		camera(b, 1.5, 1, 1.5, 0, 0, 0, 0, 1, 0);
 		mulmat(b, a, c, 4, 4, 4);
-		perspective(b, M_PI / 3.0, (float)w/(float)h/2, 0.1, 5.0);
+		perspective(b, M_PI / 3.0, (float)w/(float)h*CHAR_RATIO, 0.1, 5.0);
 		mulmat(b, c, a, 4, 4, 4);
 		applyMatrixToVec3(vertices, _triangles, 3*3, a);
 		radius += M_PI / 120.0;
