@@ -1,7 +1,11 @@
 #pragma once
 
-void mulvecV(const float*, const float*, float*);
-float mulvecS(const float*, const float*);
+//3-vectors utils
+void mulvecV(const float*, const float*, float*); //computes the vector product of two 3-vectors
+float mulvecS(const float*, const float*); //computes the scalar product of two 3-vectors
+float mod3(const float*); //computes the euclidean module of a 3-vector
+void norm(float*); //normalizes a 3-vector
+float distance(const float*, const float*); //computes the euclidean distance
 
 /*mat1, mat2, res, n, m, o
  *mat1 n * m matrix
@@ -13,7 +17,7 @@ void mulmat(const float*, const float*, float*, int, int, int);
 //return various 4x4 matrices
 void identity(float*);
 void translate(float*, float, float, float);
-void rotateX(float*, float);
+void rotateX(float*, float); //radians angles here
 void rotateY(float*, float);
 void rotateZ(float*, float);
 void scale(float*, float, float, float);

@@ -2,7 +2,7 @@
 #include "lib.h"
 #include <math.h>
 
-//computes a 3x3 matrix' discriminant
+//computes a 3x3 matrix' determinant
 float det3(const float *m) {
 	return
 	+ m[0] * (m[4] * m[8] - m[5] * m[7])
@@ -10,12 +10,10 @@ float det3(const float *m) {
 	+ m[2] * (m[3] * m[7] - m[4] * m[6]);
 }
 
-//computes the module of a 3-vector
 float mod3(const float *v) {
 	return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
-//normalizes a 3-vector
 void norm(float* v) {
 	float d = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 	v[0] /= d;
@@ -23,14 +21,20 @@ void norm(float* v) {
 	v[2] /= d;
 }
 
-//computes the vector product of two 3-vectors
+float distance(const float *v, const float *u) {
+	float w[3];
+	w[0] = v[0] - u[0];
+	w[1] = v[1] - u[1];
+	w[2] = v[2] - u[2];
+	return sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
+}
+
 void mulvecV(const float *a, const float *b, float *c) {
 	c[0] = a[1] * b[2] - a[2] * b[1];
 	c[1] = a[2] * b[0] - a[0] * b[2];
 	c[2] = a[0] * b[1] - a[1] * b[0];
 }
 
-//computes the scalar product of two 3-vectors
 float mulvecS(const float *a, const float *b) {
 	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }

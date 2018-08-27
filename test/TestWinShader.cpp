@@ -14,6 +14,8 @@ RECT client;
 int timerPeriod = 15;
 #define DELTA_PERIOD 1
 
+long int _stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
+
 //stuff
 BRC brc;
 HBITMAP buffer;
@@ -29,7 +31,7 @@ int keys;
 #define KEY_Q 0x10
 #define KEY_E 0x20
 
-const float _triangles[] = {
+/*const float _triangles[] = {
 -1.0f, 1.0f, -1.0f,
 1.0f, 0.0f, 1.0f,
 0.5f, -1.0f, 1.0f,
@@ -39,21 +41,39 @@ const float _triangles[] = {
 0.0f, 1.0f, 1.0f,
 1.0f, -0.5f, -1.0f,
 -1.0f, -0.5f, -1.0f
-};
-
-/*
-#define CUBE(a) (a&1 ? 1.0f : -1.0f), (a&4 ? 1.0f : -1.0f), (a&2 ? -1.0f : 1.0f)
-#define FACE(a,b,c,d) CUBE(a),CUBE(b),CUBE(c),CUBE(b),CUBE(c),CUBE(d)
-const float _cube[] = {
-FACE(0, 1, 2, 3),
-FACE(4, 5, 6, 7),
-FACE(0, 1, 4, 5),
-FACE(2, 3, 6, 7),
-FACE(0, 2, 4, 6),
-FACE(1, 3, 5, 7)
 };*/
 
-long int _stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
+#define TETRA1 0.0, +1.0, 1.0/M_SQRT2
+#define TETRA2 0.0, -1.0, 1.0/M_SQRT2
+#define TETRA3 +1.0, 0.0, -1.0/M_SQRT2
+#define TETRA4 -1.0, 0.0, -1.0/M_SQRT2
+const float _tetrahedron[] = {
+TETRA1, TETRA4, TETRA2,
+TETRA2, TETRA3, TETRA1,
+TETRA4, TETRA1, TETRA3,
+TETRA3, TETRA2, TETRA4
+};
+
+const float _up[] = {0.0f, 1.0f, 0.0f};
+
+float fooShader_cos;
+Color fooShader(Color c, float x, float y, float z) {
+	unsigned char *out = (unsigned char*)&c;
+	float &s = fooShader_cos;
+	if(s > 0.0) {
+		//out[0] = (out[0] * (1.0 - s)) + (255.0 * s); o = o - os + 255s, o += s(255-o)
+		out[0] += s * (255 - out[0]);
+		out[1] += s * (255 - out[1]);
+		out[2] += s * (255 - out[2]);
+	}
+	else if(s < 0.0) {
+		//out[0] = (out[0] * (s + 1.0)) + (0 * s); o = o * (s + 1)
+		out[0] *= s + 1.0f;
+		out[1] *= s + 1.0f;
+		out[2] *= s + 1.0f;
+	}
+	return c;
+}
 
 int main() {
 	//debug
@@ -80,7 +100,7 @@ int main() {
 	radius = 0.0;
 	x = 0.0f;
 	y = 0.0f;
-	z = 1.5f;
+	z = 2.5f;
 	pitch = 0.0f;
 	yaw = 0.0f;
 	keys = 0;
@@ -95,17 +115,12 @@ int main() {
 		BRCInit(&brc,
 			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
 			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
-			client.right, client.bottom, client.right << 2, client.right << 2, 32, 32, 0
+			client.right, client.bottom, client.right << 2, client.right << 2, 32, 32, fooShader
 			)
 	) {
 		MessageBox(0, "!", "error", MB_OK);
 		return 1;
 	}
-	/*brc.width = client.right;
-	brc.height = client.bottom;
-	brc.pitch = brc.zPitch = client.right << 2;
-	brc.buffer = (Color*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	brc.zBuffer = (unsigned int*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);*/
 	buffer = CreateBitmap(client.right, client.bottom, 1, 32, 0);
 	
 	//windows II
@@ -130,9 +145,8 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_TIMER:
 		QueryPerformanceCounter(&t1);
 		float a[16], b[16], c[16];
-		//float buf[4*3*2];
-		float buf[4*3*3];
-		//float buf[4*2*3*6];
+		float buf[4*4*3];
+		float buf0[4*4*3];
 		
 		float lx, lz;
 		lx = (((keys & KEY_D) != 0) - ((keys & KEY_A) != 0)) * 0.01f;
@@ -141,10 +155,6 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		y += (((keys & KEY_E) != 0) - ((keys & KEY_Q) != 0)) * 0.01f;
 		z += -lx * sin(pitch) + lz * cos(pitch);
 		
-		background(&brc, 0);
-		clearZbuf(&brc);
-		
-		rotateY(a, radius);
 		float s[3], u[3], temp[3];
 		s[0] = - sin(pitch) * cos(yaw);
 		s[1] = + sin(yaw);
@@ -157,16 +167,34 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		s[0] += x;
 		s[1] += y;
 		s[2] += z;
+		
+		rotateY(c, radius);
+		rotateZ(b, radius * (10.0/17.0));
+		mulmat(b, c, a, 4, 4, 4);
+		applyMatrixToVec3(buf0, _tetrahedron, 4*3, a);
 		camera(b, x, y, z, s[0], s[1], s[2], u[0], u[1], u[2]);
 		mulmat(b, a, c, 4, 4, 4);
 		perspective(b, M_PI / 3.0, 4.0f / 3.0f, 0.1f, 3.0f);
 		mulmat(b, c, a, 4, 4, 4);
-		applyMatrixToVec3(buf, _triangles, 3*3, a);
-		//applyMatrixToVec3(buf, _cube, 2*3*6, a);
+		applyMatrixToVec3(buf, _tetrahedron, 4*3, a);
 		
-		for(int i = 0; i < 3; i++)
-		//for(int i = 0; i < 2*6; i++)
-			triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, (0xFF0000 * i / 11 + 0x00FF00 * (11 - i) / 11));
+		background(&brc, 0);
+		clearZbuf(&brc);
+		
+		float v[3], w[3], n[3];
+		for(int i = 0; i < 4; i++) {
+			v[0] = buf0[i*12+4] - buf0[i*12];
+			v[1] = buf0[i*12+5] - buf0[i*12+1];
+			v[2] = buf0[i*12+6] - buf0[i*12+2];
+			w[0] = buf0[i*12+8] - buf0[i*12];
+			w[1] = buf0[i*12+9] - buf0[i*12+1];
+			w[2] = buf0[i*12+10] - buf0[i*12+2];
+			mulvecV(v, w, n);
+			norm(n);
+			fooShader_cos = mulvecS(n, _up) * 0.3f;
+			//triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, (i/2 ? 0xFF0000 : 0) + (i%2 ? 0xFF : 0) + (!i ? 0xFF00 : 0));
+			triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, 0xFF0000);
+		}
 		
 		radius += M_PI / 120.0;
 		

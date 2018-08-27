@@ -1,9 +1,11 @@
 #include <cstdint>
+#include <cmath>
 #include "BeardRenderer.h"
 #include "lib.h"
 
 #define min(a,b) (a<b?a:b)
-#define abs(a) (a<0?-a:a)
+#define max(a,b) (a<b?b:a)
+//#define abs(a) (a<0?-a:a)
 
 //#define MAX_DEPTH 0xFFFFFF00
 
@@ -30,7 +32,7 @@ inline bool cmpDepth(void *zBuf, uint32_t depth, int bpz) {
 	return depth < t;
 }
 
-bool BRCInit(BRC *brc, void *buffer, void *zBuffer, int width, int height, int pitch, int zPitch, int bpp, int zDepth) {
+bool BRCInit(BRC *brc, void *buffer, void *zBuffer, int width, int height, int pitch, int zPitch, int bpp, int zDepth, Color (*s)(Color, float, float, float)) {
 	//since this library is abstract, it doesn't allocate memory
 	bpp &= ~7; //TODO add support for bpp < 8
 	zDepth &= ~7;
@@ -44,12 +46,14 @@ bool BRCInit(BRC *brc, void *buffer, void *zBuffer, int width, int height, int p
 	brc->zPitch = zPitch;
 	brc->zDepth = zDepth;
 	brc->bpp = bpp;
+	brc->shader = s;
 	return true;
 }
 
 void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	if(y <= -1.0f || y > 1.0f)
 		return;
+	Color cs; //shaded color
 	int Bpp, Bpz; //bytes per pixel, bytes per zBuffer element
 	Bpp = brc->bpp >> 3;
 	Bpz = brc->zDepth >> 3;
@@ -65,15 +69,20 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 		z2 = t;
 	}
 	else if(x1 == x2) {
-		float z = min(z1, z2);
+		float z = min(max(z1, z2), 1.0f);
 		if(x1 >= -1.0f && x1 < 1.0f && z >= -1.0f && z <= 1.0f) {
 			int h = (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
 			int hz = (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;
 			int x = (int)((x1 + 1.0f) / 2.0f * brc->width) * Bpp;
 			int xz = (int)((x1 + 1.0f) / 2.0f * brc->width) * Bpz;
-			uint32_t z = (int)((z - 1.0f) / -2.0f * maxDepth);
-			if(cmpDepth(brc->zBuffer + hz + xz, z, brc->zDepth))
-				setPixel(brc->buffer + h + x, brc->zBuffer + hz + xz, c, z, Bpp, Bpz);
+			uint32_t zz = (int)((z - 1.0f) / -2.0f * maxDepth);
+			if(cmpDepth(brc->zBuffer + hz + xz, zz, brc->zDepth)) {
+				if(brc->shader)
+					cs = (*(brc->shader))(c, x1, y, z);
+				else
+					cs = c; //no shading
+				setPixel(brc->buffer + h + x, brc->zBuffer + hz + xz, cs, zz, Bpp, Bpz);
+			}
 		}
 		return;
 	}
@@ -117,9 +126,13 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	void *b = brc->buffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
 	void *zb = brc->zBuffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;
 	while(n > 0) {
-		if(cmpDepth(zb + x * Bpz, z, brc->zDepth))
-			//here goes shading code
-			setPixel(b + x * Bpp, zb + x * Bpz, c, z, brc->bpp, brc->zDepth);
+		if(cmpDepth(zb + x * Bpz, z, brc->zDepth)) {
+			if(brc->shader)
+				cs = (*(brc->shader))(c, x1, y, z);
+			else
+				cs = c; //no shading
+			setPixel(b + x * Bpp, zb + x * Bpz, cs, z, brc->bpp, brc->zDepth);
+		}
 		x++;
 		z += dz;
 		n--;

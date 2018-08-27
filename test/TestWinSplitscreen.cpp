@@ -64,10 +64,10 @@ int main() {
 	nl();
 	void *tmp1 = VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 	void *tmp2 = VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	BRCInit(&dc1, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
-	BRCInit(&dc2, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
-	BRCInit(&dc3, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
-	BRCInit(&dc4, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32);
+	BRCInit(&dc1, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32, 0);
+	BRCInit(&dc2, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32, 0);
+	BRCInit(&dc3, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32, 0);
+	BRCInit(&dc4, tmp1, tmp2, client.right >> 1, client.bottom >> 1, client.right << 2, client.right << 2, 32, 32, 0);
 	dc2.buffer = (int*)dc1.buffer + dc1.width;
 	dc3.buffer = (int*)dc1.buffer + dc1.width * dc1.height * 2;
 	dc4.buffer = (int*)dc3.buffer + dc3.width;

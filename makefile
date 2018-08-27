@@ -53,6 +53,10 @@ test_win_splitscreen: $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\WinDebug.o $(LIBO
 test_win_console: $(BINDIR)\TestWinConsole.o $(LIBOUT)
 	$(CC) -o $(BINDIR)\$(TEST_EXECUTABLE) $< $(LDFLAGS_TST)
 
+.PHONY: test_win_shader
+test_win_shader: $(BINDIR)\TestWinShader.o $(BINDIR)\WinDebug.o $(LIBOUT)
+	$(CC) -o $(BINDIR)\$(TEST_EXECUTABLE) $< $(BINDIR)\WinDebug.o -lgdi32 $(LDFLAGS_TST)
+
 $(BINDIR)\WinDebug.o: $(TSTDIR)\WinDebug.cpp $(TSTDIR)\WinDebug.h
 	$(CC) -c -o $@ $<
 
@@ -65,6 +69,9 @@ $(BINDIR)\TestWinSplitscreen.o: $(TSTDIR)\TestWinSplitscreen.cpp $(LIBDEPS) $(TS
 $(BINDIR)\TestWinConsole.o: $(TSTDIR)\TestWinConsole.cpp $(LIBDEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(BINDIR)\TestWinShader.o: $(TSTDIR)\TestWinShader.cpp $(LIBDEPS) $(TSTDIR)\WinDebug.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 .PHONY: clean_test
 clean_test:
-	rm -f $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\WinDebug.o $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o
+	rm -f $(BINDIR)\$(TEST_EXECUTABLE) $(BINDIR)\WinDebug.o $(BINDIR)\TestWinNormal.o $(BINDIR)\TestWinSplitscreen.o $(BINDIR)\TestWinConsole.o $(BINDIR)\TestWinShader.o

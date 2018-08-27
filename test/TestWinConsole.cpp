@@ -51,7 +51,7 @@ int main() {
 	p = w + 1;
 	if(!BRCInit(&brc, VirtualAlloc(0, p * h, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE),
 		VirtualAlloc(0, w * h, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE),
-		w, h, p, w, 8, 8)) {
+		w, h, p, w, 8, 8, 0)) {
 		MessageBox(0, "!", "error", MB_OK);
 		return 1;
 	}
