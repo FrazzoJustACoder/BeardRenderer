@@ -74,12 +74,10 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 			uint32_t z = (int)((z - 1.0f) / -2.0f * maxDepth);
 			if(cmpDepth(brc->zBuffer + hz + xz, z, brc->zDepth))
 				setPixel(brc->buffer + h + x, brc->zBuffer + hz + xz, c, z, Bpp, Bpz);
-				/*brc->zBuffer[h + x] = z;
-				brc->buffer[h + x] = c;*/
 		}
 		return;
 	}
-	if(x1 < -3.0f || x2 > 3.0f) //NOTE problems with clipping
+	if(x1 < -2.0f || x2 > 2.0f) //NOTE temporary clipping
 		return;
 	if(x1 >= 1.0f || x2 < -1.0f)
 		return;
@@ -118,15 +116,10 @@ void hline(BRC *brc, float x1, float y, float z1, float x2, float z2, Color c) {
 	dz = (z2 - z1) / -2.0f * maxDepth / n;
 	void *b = brc->buffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
 	void *zb = brc->zBuffer + (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;
-	/*int h = (int)((y - 1.0f) / -2.0f * brc->height) * brc->pitch;
-	int hz = (int)((y - 1.0f) / -2.0f * brc->height) * brc->zPitch;*/
 	while(n > 0) {
-		if(cmpDepth(zb + x * Bpz, z, brc->zDepth)) {
+		if(cmpDepth(zb + x * Bpz, z, brc->zDepth))
 			//here goes shading code
 			setPixel(b + x * Bpp, zb + x * Bpz, c, z, brc->bpp, brc->zDepth);
-			/*b[h + x] = c;
-			zb[hz + x] = z;*/
-		}
 		x++;
 		z += dz;
 		n--;

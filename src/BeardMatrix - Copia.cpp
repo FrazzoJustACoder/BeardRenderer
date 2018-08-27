@@ -163,9 +163,8 @@ void perspective(float *d, float fov, float r, float n, float f) {
 		identity(d);
 		return;
 	}
-	scale(d, 1.0f / (tan(fov / 2.0f)), r / tan(fov / 2.0f), f / (f - n));
-	//d[11] = (f + n - 2.0f) / (f - n);
-	d[11] = (3.0 * f * n - f - n) / (f - n);
+	scale(d, 1.0f / (tan(fov / 2.0f)), r / tan(fov / 2.0f), 2.0f / (f - n));
+	d[11] = (f + n - 2.0f) / (f - n);
 	d[14] = -1.0f;
 	d[15] = 1.0f;
 }

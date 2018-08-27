@@ -89,7 +89,7 @@ int main() {
 		radius += M_PI / 120.0;
 		
 		for(int i = 0; i < 3; i++)
-			triangle(&brc, vertices + i * 12, vertices + i * 12 + 4, vertices + i * 12 + 8, 0x30 + i - 1);//0x80 + i
+			triangle(&brc, vertices + i * 12, vertices + i * 12 + 4, vertices + i * 12 + 8, 0x30 + i - 1);//0xB0 + i
 		
 		//update
 		SetConsoleCursorPosition(out, coord0);
