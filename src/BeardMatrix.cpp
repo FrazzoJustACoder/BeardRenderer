@@ -29,6 +29,21 @@ float distance(const float *v, const float *u) {
 	return sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
 }
 
+void triNorm(float *d, const float *a, const float *b, const float *c) {
+	float u[3], v[3];
+	u[0] = b[0] - a[0];
+	u[1] = b[1] - a[1];
+	u[2] = b[2] - a[2];
+	v[0] = c[0] - a[0];
+	v[1] = c[1] - a[1];
+	v[2] = c[2] - a[2];
+	mulvecV(u, v, d);
+}
+
+float cosV(const float *v, const float *u) {
+	return mulvecS(v, u) / (mod3(v) * mod3(u));
+}
+
 void mulvecV(const float *a, const float *b, float *c) {
 	c[0] = a[1] * b[2] - a[2] * b[1];
 	c[1] = a[2] * b[0] - a[0] * b[2];

@@ -31,18 +31,7 @@ int keys;
 #define KEY_Q 0x10
 #define KEY_E 0x20
 
-/*const float _triangles[] = {
--1.0f, 1.0f, -1.0f,
-1.0f, 0.0f, 1.0f,
-0.5f, -1.0f, 1.0f,
-1.0f, 1.0f, -1.0f,
--1.0f, 0.0f, 1.0f,
--0.5f, -1.0f, 1.0f,
-0.0f, 1.0f, 1.0f,
-1.0f, -0.5f, -1.0f,
--1.0f, -0.5f, -1.0f
-};*/
-
+//notice that in order to make normals poining towards "out" direction, the right hand rule has to be applied
 #define TETRA1 0.0, +1.0, 1.0/M_SQRT2
 #define TETRA2 0.0, -1.0, 1.0/M_SQRT2
 #define TETRA3 +1.0, 0.0, -1.0/M_SQRT2
@@ -181,17 +170,10 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		background(&brc, 0);
 		clearZbuf(&brc);
 		
-		float v[3], w[3], n[3];
+		float n[3];
 		for(int i = 0; i < 4; i++) {
-			v[0] = buf0[i*12+4] - buf0[i*12];
-			v[1] = buf0[i*12+5] - buf0[i*12+1];
-			v[2] = buf0[i*12+6] - buf0[i*12+2];
-			w[0] = buf0[i*12+8] - buf0[i*12];
-			w[1] = buf0[i*12+9] - buf0[i*12+1];
-			w[2] = buf0[i*12+10] - buf0[i*12+2];
-			mulvecV(v, w, n);
-			norm(n);
-			fooShader_cos = mulvecS(n, _up) * 0.3f;
+			triNorm(n, buf0+i*12, buf0+i*12+4, buf0+i*12+8);
+			fooShader_cos = cosV(n, _up) * 0.3f;
 			//triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, (i/2 ? 0xFF0000 : 0) + (i%2 ? 0xFF : 0) + (!i ? 0xFF00 : 0));
 			triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, 0xFF0000);
 		}

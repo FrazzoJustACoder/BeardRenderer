@@ -1,3 +1,5 @@
+//"BeardGeometry.h" would be a better name
+
 #pragma once
 
 //3-vectors utils
@@ -6,6 +8,8 @@ float mulvecS(const float*, const float*); //computes the scalar product of two 
 float mod3(const float*); //computes the euclidean module of a 3-vector
 void norm(float*); //normalizes a 3-vector
 float distance(const float*, const float*); //computes the euclidean distance
+void triNorm(float*, const float*, const float*, const float*); //computes the normal to the given triangle using right hand rule
+float cosV(const float*, const float*); //computes the cos of the angle between two vectors
 
 /*mat1, mat2, res, n, m, o
  *mat1 n * m matrix
