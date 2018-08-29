@@ -12,7 +12,7 @@ typedef struct {
 	int bpp; //bits per pixel
 	int zDepth; //zBuffer bits depth
 	
-	//parameters: base color, distance from vertices
+	//parameters: base color, x, y, z
 	Color (*shader)(Color, float, float, float); //user-defined fragment shader procedure
 	//NOTE no support for vertex shader because vertices handling is left to the application (with the BeardMatrix' help)
 } BRC;

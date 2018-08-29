@@ -190,6 +190,15 @@ void triangle(BRC *brc, const float *p1, const float *p2, const float *p3, Color
 	dz2 = (p3[2] - z1) / m;
 	if(n > 10 * brc->height || m > 10 * brc->height) //
 		return;
+	while(y <= -1.0f && n > 0) {
+		x1 += dx1;
+		z1 += dz1;
+		x2 += dx2;
+		z2 += dz2;
+		y += dy;
+		n -= 1.0f;
+		m -= 1.0f;
+	}
 	while(n > 0) {
 		hline(brc, x1, y, z1, x2, z2, c);
 		x1 += dx1;

@@ -19,7 +19,7 @@ long int _stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
 //stuff
 BRC brc;
 HBITMAP buffer;
-int showZbuf;
+int switchShader;
 double radius;
 float x, y, z, pitch, yaw;
 int oldX, oldY;
@@ -45,8 +45,9 @@ TETRA3, TETRA2, TETRA4
 
 const float _up[] = {0.0f, 1.0f, 0.0f};
 
-float fooShader_cos;
+/*float fooShader_cos;
 Color fooShader(Color c, float x, float y, float z) {
+	//NOTE the return value is the same for all the fragments in a triangle...
 	unsigned char *out = (unsigned char*)&c;
 	float &s = fooShader_cos;
 	if(s > 0.0) {
@@ -62,7 +63,17 @@ Color fooShader(Color c, float x, float y, float z) {
 		out[2] *= s + 1.0f;
 	}
 	return c;
+}*/
+
+int fuShader_shift = 0;
+Color fuShader(Color c, float x, float y, float z) {
+	Color d = c & (0xFFFFFF >> (24 - fuShader_shift));
+	c = (c >> fuShader_shift) | d; //just a random effect
+	fuShader_shift = (fuShader_shift + 17) % 24;
+	return c;
 }
+
+Color (*shaders[2])(Color, float, float, float) = {0, fuShader};
 
 int main() {
 	//debug
@@ -85,7 +96,7 @@ int main() {
 		100, 100, 646, 509, 0, 0, hInst, 0);
 	
 	//stuff
-	showZbuf = 0;
+	switchShader = 0;
 	radius = 0.0;
 	x = 0.0f;
 	y = 0.0f;
@@ -104,7 +115,7 @@ int main() {
 		BRCInit(&brc,
 			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
 			VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE),
-			client.right, client.bottom, client.right << 2, client.right << 2, 32, 32, fooShader
+			client.right, client.bottom, client.right << 2, client.right << 2, 32, 32, 0
 			)
 	) {
 		MessageBox(0, "!", "error", MB_OK);
@@ -172,10 +183,25 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		
 		float n[3];
 		for(int i = 0; i < 4; i++) {
+			triNorm(n, buf+i*12, buf+i*12+4, buf+i*12+8);
+			if(n[2] < 0.0) continue; //"cull-face" a.k.a. discard unseen triangles of closed shapes
 			triNorm(n, buf0+i*12, buf0+i*12+4, buf0+i*12+8);
-			fooShader_cos = cosV(n, _up) * 0.3f;
+			float c = cosV(n, _up) * 0.3f;
+			unsigned char out[4];
+			if(c >= 0.0) {
+				//out[0] = (out[0] * (1.0 - c)) + (255.0 * c); o = o - oc + 255s, o += c(255-o)
+				out[0] = c * 255;
+				out[1] = c * 255;
+				out[2] = 255;
+			}
+			else {
+				//out[0] = (out[0] * (c + 1.0)) + (0 * c); o = o * (c + 1)
+				out[0] = 0;
+				out[1] = 0;
+				out[2] = 255 * (c + 1.0f);
+			}
 			//triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, (i/2 ? 0xFF0000 : 0) + (i%2 ? 0xFF : 0) + (!i ? 0xFF00 : 0));
-			triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, 0xFF0000);
+			triangle(&brc, buf+i*12, buf+i*12+4, buf+i*12+8, *(int*)out);
 		}
 		
 		radius += M_PI / 120.0;
@@ -192,22 +218,7 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		QueryPerformanceCounter(&t1);
 		hdc = BeginPaint(hwnd, &ps);
 		hdcMem = CreateCompatibleDC(hdc);
-		if(!showZbuf)
-			SetBitmapBits(buffer, client.bottom * client.right * 4, brc.buffer);
-		else {
-			unsigned int *buf = (unsigned int*)VirtualAlloc(0, client.right * client.bottom * 4, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-			for(int i = 0; i < client.bottom; i++) {
-				unsigned int a;
-				for(int j = 0; j < client.right; j++) {
-					a = ((unsigned int*)(brc.zBuffer))[i * client.right + j];
-					a = 255 - (a >> 24);
-					a |= (a << 8) | (a << 16);
-					buf[i * client.right + j] = a;
-				}
-			}
-			SetBitmapBits(buffer, client.bottom * client.right * 4, buf);
-			VirtualFree(buf, 0, MEM_RELEASE);
-		}
+		SetBitmapBits(buffer, client.bottom * client.right * 4, brc.buffer);
 		SelectObject(hdcMem, buffer);
 		BitBlt(hdc, 0, 0, client.right, client.bottom, hdcMem, 0, 0, SRCCOPY);
 		DeleteDC(hdcMem);
@@ -225,8 +236,8 @@ long int _stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			DestroyWindow(hwnd);
 			break;
 		case VK_SPACE:
-			showZbuf ^= 1;
-			InvalidateRect(hwnd, 0, 0);
+			switchShader ^= 1;
+			brc.shader = shaders[switchShader];
 			break;
 		case VK_LEFT:
 			timerPeriod -= DELTA_PERIOD;

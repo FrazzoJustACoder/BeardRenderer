@@ -2,11 +2,11 @@
 
 #pragma once
 
-//3-vectors utils
-void mulvecV(const float*, const float*, float*); //computes the vector product of two 3-vectors
-float mulvecS(const float*, const float*); //computes the scalar product of two 3-vectors
-float mod3(const float*); //computes the euclidean module of a 3-vector
-void norm(float*); //normalizes a 3-vector
+//3-vectors (a.k.a. xyz vectors) utils
+void mulvecV(const float*, const float*, float*); //computes the vector product of two vectors
+float mulvecS(const float*, const float*); //computes the scalar product of two vectors
+float mod3(const float*); //computes the euclidean module of a vector
+void norm(float*); //normalizes a vector
 float distance(const float*, const float*); //computes the euclidean distance
 void triNorm(float*, const float*, const float*, const float*); //computes the normal to the given triangle using right hand rule
 float cosV(const float*, const float*); //computes the cos of the angle between two vectors

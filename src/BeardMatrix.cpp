@@ -16,9 +16,11 @@ float mod3(const float *v) {
 
 void norm(float* v) {
 	float d = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	v[0] /= d;
-	v[1] /= d;
-	v[2] /= d;
+	if(d != 0.0f) {
+		v[0] /= d;
+		v[1] /= d;
+		v[2] /= d;
+	}
 }
 
 float distance(const float *v, const float *u) {
